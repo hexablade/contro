@@ -4,7 +4,7 @@ CC=gcc
 # # Hey!, I am comment number 2. I want to say that CFLAGS will be the
 # # options I'll pass to the compiler.
 FPATH=$(HOME)/Library/Frameworks
-FILES=contro.c 
+FILES=contro.c engine.c 
 CFLAGS=-Wall -g --std=c99
 OSFLAV=
 

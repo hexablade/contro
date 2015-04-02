@@ -7,7 +7,16 @@
 #define MAX_BULLETS 1000
 
 
-void addBullet(float x, float y, float dx){
+
+Bullet *bullets[MAX_BULLETS] = { NULL };
+
+
+int globalTime = 0;
+
+
+
+void addBullet(float x, float y, float dx)
+{
     
     int found = -1;
     for(int i = 0; i < MAX_BULLETS; i++)
@@ -15,8 +24,8 @@ void addBullet(float x, float y, float dx){
         if(bullets[i] == NULL)
         {
             found = i;
-            break;
-        }
+           }
+        
         
         if(found >= 0)
         {
@@ -25,8 +34,9 @@ void addBullet(float x, float y, float dx){
             bullets[i]->x = x;
             bullets[i]->y = y;
             bullets[i]->dx = dx;
+            break;
         }
-        
+         
     }
 }
 
@@ -152,16 +162,113 @@ int processEvents(SDL_Window *window, Man *man)
 }
 
 
-void doRender(SDL_Renderer *renderer, Man *man);
-void updateLogic(Man *man);
+void doRender(SDL_Renderer *renderer, Man *man)
+{
+    //set the drawing color to blue
+    SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
+    
+    //Clear the screen (to blue)
+    SDL_RenderClear(renderer);
+    
+    //set the drawing color to white
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    
+    //SDL_RenderFillRect(renderer, &rect);
+    SDL_RenderCopy(renderer, backgroundTexture, NULL, NULL);
+    
+    //warrior
+    if(man->visible)
+    {
+        SDL_Rect srcRect = { 40*man->currentSprite, 0, 40, 50 };
+        SDL_Rect rect = { man->x, man->y, 40, 50 };
+        SDL_RenderCopyEx(renderer, man->sheetTexture, &srcRect, &rect, 0, NULL, man->facingLeft);
+    }
+    
+    //enemy
+    if(enemy.visible)
+    {
+        SDL_Rect eSrcRect = { 40*enemy.currentSprite, 0, 40, 50 };
+        SDL_Rect eRect = { enemy.x, enemy.y, 40, 50 };
+        SDL_RenderCopyEx(renderer, enemy.sheetTexture, &eSrcRect, &eRect, 0, NULL, enemy.facingLeft);
+    }
+    
+    for(int i = 0; i < MAX_BULLETS; i++)
+        if(bullets[i])
+    {
+        SDL_Rect rect = { bullets[i]->x, bullets[i]->y, 8, 8 };
+        SDL_RenderCopy(renderer, bulletTexture, NULL, &rect);
+    }
+    
+    //We are done drawing, "present" or show to the screen what we've drawn
+    SDL_RenderPresent(renderer);
+}
+void updateLogic(Man *man)
+{
+    man->y += man->dy;
+    man->dy += 0.5;
+    if(man->y > 60)
+    {
+        man->y = 60;
+        man->dy = 0;
+    }
+    
+    for(int i = 0; i < MAX_BULLETS; i++) if(bullets[i])
+    {
+        bullets[i]->x += bullets[i]->dx;
+        
+        //simple coll. detection
+        if(bullets[i]->x > enemy.x && bullets[i]->x < enemy.x+40 &&
+           bullets[i]->y > enemy.y && bullets[i]->y < enemy.y+50)
+        {
+            enemy.alive = 0;
+        }
+        
+        if(bullets[i]->x < -1000 || bullets[i]->x > 1000)
+            removeBullet(i);
+    }
+    
+    if(enemy2.alive == 0 && globalTime % 6 == 0)
+    {
+        if(enemy2.currentSprite < 6)
+            enemy2.currentSprite = 6;
+        else if(enemy2.currentSprite >= 6)
+        {
+            enemy2.currentSprite++;
+            if(enemy2.currentSprite > 7)
+            {
+                enemy2.visible = 0;
+                enemy2.currentSprite = 7;
+            }
+        }
+    }
+    if(enemy.alive == 0 && globalTime % 6 == 0)
+    {
+        if(enemy.currentSprite < 6)
+            enemy.currentSprite = 6;
+        else if(enemy.currentSprite >= 6)
+        {
+            enemy.currentSprite++;
+            if(enemy.currentSprite > 7)
+            {
+                enemy.visible = 0;
+                enemy.currentSprite = 7;
+            }
+        }
+    }
+    
+    globalTime++;
+}
 
 
-void obliterate_graphics(void){
-    SDL_Quit();
-    SDL_DestroyWindow(window);
+void obliterate_graphics(SDL_Renderer *renderer, Man *man, SDL_Window *window)
+{
+
+    
     SDL_DestroyRenderer(renderer);
-    SDL_DestroyTexture(man.sheetTexture);
+    SDL_DestroyWindow(window);
+    SDL_DestroyTexture(man->sheetTexture);
     SDL_DestroyTexture(backgroundTexture);
     SDL_DestroyTexture(bulletTexture);
     SDL_DestroyTexture(enemy.sheetTexture);
+    SDL_Quit();
 }
